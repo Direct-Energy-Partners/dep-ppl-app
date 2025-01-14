@@ -125,8 +125,11 @@ class Pplapp:
     def getLogs(self):
         self.sendMessage("request", "getLogs", "", "")
         
+    def sendTelegram(self, message, level="INFO"):
+        self.sendMessage("request", "sendTelegram", message, level)
+        
     def setCommands(self, deviceId, commands):
-        threading.Thread(target=asyncio.run, args=(self.sendMessageAsync("request", "setCommands", deviceId, commands),)).start()
+        self.sendMessage("request", "setCommands", deviceId, commands)
 
     def sendMessage(self, messageType, messageId, deviceId, commands):
         threading.Thread(target=asyncio.run, args=(self.sendMessageAsync(messageType, messageId, deviceId, commands),)).start()
