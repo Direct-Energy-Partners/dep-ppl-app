@@ -63,15 +63,15 @@ class Precharge:
                 self.closeContactor()
 
                 # Get the state of the contactor
-                contactorState = self.app.getMeasurements(converterId, "measure.ports.port1.contactor")
+                contactorState = self.app.getMeasurements(batteryId, "measure.ports.port1.contactor")
 
                 # Check if the contactor is closed
-                if contactorState == "closed":
+                if contactorState == "close":
                     self.state = "disablingBatteryPort"
 
             elif self.state == "disablingBatteryPort":
                 # Set the battery port to disabled mode
-                method = "disabled"
+                method = "idle"
                 self.configureConverter(batteryPort, method)
 
                 # Get the current method configured on the battery port
