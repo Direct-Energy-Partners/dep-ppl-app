@@ -44,7 +44,7 @@ def batteryTargetSOC(app):
     batteryChargePowerMax = int(float(app.getMeasurements(batteryId, "measure.ports.port1.power.charge.max")))
     batteryDischargePowerMax = int(float(app.getMeasurements(batteryId, "measure.ports.port1.power.discharge.max")))
 
-    powerSetpoint = limit(powerSetpoint, -batteryChargePowerMax, -batteryDischargePowerMax)
+    powerSetpoint = limit(powerSetpoint, -batteryChargePowerMax, batteryDischargePowerMax)
 
     setPower(app, powerSetpoint)
 
@@ -64,7 +64,7 @@ def setPower(app, powerSetpoint):
 
 def disableBatteryPort(app):
     commands = {
-        f"control.ports.port{batteryPortNumber}.method": "disabled",
+        f"control.ports.port{batteryPortNumber}.method": "idle",
         f"control.ports.port{batteryPortNumber}.power": str(0)
     }
     app.setCommands(converterId, commands)
