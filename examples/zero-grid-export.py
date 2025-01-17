@@ -76,7 +76,7 @@ class ZeroGridExport:
 
     def disableBatteryPort(self):
         commands = {
-            f"control.ports.{batteryPort}.method": "disabled",
+            f"control.ports.{batteryPort}.method": "idle",
             f"control.ports.{batteryPort}.power": str(0)
         }
         self.app.setCommands(converterId, commands)
