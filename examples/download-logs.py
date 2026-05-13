@@ -10,6 +10,7 @@ from pplapp import Pplapp
 
 # -- Configuration ------------------------------------------------------------
 STARTUP_DELAY_S = 5
+DOWNLOAD_TIMEOUT_S = 5
 
 # -- Logging ------------------------------------------------------------------
 log = logging.getLogger("download-logs")
@@ -41,6 +42,7 @@ def main() -> None:
 
     try:
         app.getLogs()
+        time.sleep(DOWNLOAD_TIMEOUT_S)
     except Exception as e:
         log.exception("Failed to download log files: %s", e)
     finally:
