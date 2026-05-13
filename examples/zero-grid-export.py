@@ -1,13 +1,27 @@
-import time
-from pplapp import Pplapp
-from dotenv import load_dotenv
+import logging
 import os
+import sys
+import time
+from dotenv import load_dotenv
 
-load_dotenv()
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Constants
-startupDelay = 5
-executionDelay = 5
+from pplapp import Pplapp
+
+# -- Configuration ------------------------------------------------------------
+STARTUP_DELAY_S = 5
+CONTROL_LOOP_INTERVAL_S = 5
+
+# -- Logging ------------------------------------------------------------------
+log = logging.getLogger("zero-grid-export")
+log.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    fmt="[%(asctime)s] %(levelname)s %(name)s %(message)s",
+    datefmt="%d.%m.%Y %H:%M:%S",
+)
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(formatter)
+log.addHandler(consoleHandler)
 
 minSoc = 20
 maxSoc = 90
@@ -61,7 +75,7 @@ class ZeroGridExport:
             self.setPower(self.powerSetpoint)
         
         except Exception as e:
-            print(f"Error in zeroGridExport execution: {e}")
+            log.exception("Error in zeroGridExport execution: %s", e)
     
     # Helper functions:
     def limit(self, setpoint, minimum, maximum):
@@ -81,34 +95,38 @@ class ZeroGridExport:
         }
         self.app.setCommands(converterId, commands)
 
-def main():
+def main() -> None:
+    load_dotenv()
+
+    ipAddress = os.getenv("IP_ADDRESS")
+    username = os.getenv("NATS_USERNAME")
+    password = os.getenv("NATS_PASSWORD")
+
+    if not ipAddress or not username or not password:
+        log.error("IP_ADDRESS, NATS_USERNAME, and NATS_PASSWORD must be set in .env")
+        sys.exit(1)
+
+    log.info("Connecting to PPL controller at %s", ipAddress)
+    app = Pplapp(ipAddress, username, password)
+
+    time.sleep(STARTUP_DELAY_S)
+
+    zeroGridExport = ZeroGridExport(app)
+
     try:
-        ipAddress = os.getenv("IP_ADDRESS")
-        username = os.getenv("NATS_USERNAME")
-        password = os.getenv("NATS_PASSWORD")
-
-        if not username or not password:
-            raise ValueError("NATS username or password not set in environment variables")
-
-        app = Pplapp(ipAddress, username, password)
-
-        time.sleep(startupDelay)
-
-        zeroGridExport = ZeroGridExport(app)
-
         while True:
-            zeroGridExport.execute()
-            time.sleep(executionDelay)
-
-    except Exception as e:
-        print(f"Failed to initialize Zero Grid Export: {e}")
+            try:
+                zeroGridExport.execute()
+            except Exception as e:
+                log.exception("Error in control loop: %s", e)
+            time.sleep(CONTROL_LOOP_INTERVAL_S)
 
     except KeyboardInterrupt:
+        log.info("Shutdown requested")
         zeroGridExport.disableBatteryPort()
+        app.stop()
+        log.info("Clean shutdown complete")
 
-        time.sleep(executionDelay)
-        
-        app.connectToNats = False
 
 if __name__ == "__main__":
     main()
